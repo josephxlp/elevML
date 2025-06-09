@@ -7,6 +7,8 @@ import statsmodels.api as sm
 from sklearn.model_selection import KFold, LeaveOneOut
 from sklearn.metrics import r2_score
 
+def print_context(text):
+    print(f'----------- {text} --------------')
 
 def multiple_regression_analysis(
     dependent_path, predictor_paths,
@@ -32,13 +34,16 @@ def multiple_regression_analysis(
     
     """
     
-
+    print_context("stated multiple_regression_analysis...")
+    
     ti = time.perf_counter()
+    print_context("1. dependent preprocessing ...")
     dependent_arr, meta_for_output = read_rasters([dependent_path])
     dependent_arr = dependent_arr.squeeze()
-
+    print_context("2. covars preprocessing ...")
     predictor_arrs, _ = read_rasters(predictor_paths)
 
+    print_context("3. coords preprocessing ...")
     predictor_names = [f"Predictor_{i}" for i in range(len(predictor_paths))]
     if include_xy:
         fname = 'xy1'
@@ -46,7 +51,10 @@ def multiple_regression_analysis(
     else:
         fname = 'xy0'
 
+    print_context("4. data preprocessing ...")
     X, y, (ys, xs), mask = prepare_data(dependent_arr, predictor_arrs, include_xy=include_xy)
+
+    print_context("5. feature ops selection ...")
 
     if method == 'forward':
         model, selected_vars, step_info = forward_selection(X, y, p_threshold=p_value / 100.0)
@@ -64,22 +72,26 @@ def multiple_regression_analysis(
 
     if model is None:
         return None, None
-
+    print_context("6. data modelling ...")
     pred_raster, resid_raster = predict_to_raster(model, selected_vars, X, mask, dependent_arr.shape, y_true=y)
 
+    print_context("7.1 data prediction saving  ...")
     output_regression_path_final = output_regression_path.replace('.tif', f'_{method}_{fname}.tif')
     if output_residuals_path:
         output_residuals_path_final = output_residuals_path.replace('.tif', f'_{method}_{fname}.tif')
     else:
         output_residuals_path_final = None
     
+    print_context("7.2 data residual saving  ...")
     save_raster(output_regression_path_final, pred_raster, meta_for_output)
     if output_residuals_path_final is not None:
         save_raster(output_residuals_path_final, resid_raster, meta_for_output)
 
+    print_context("8. model prediction saving  ...")
     coeffs_path = output_regression_path_final.replace('.tif', '_coefficients.csv')
     save_model_info(coeffs_path, model, selected_vars, predictor_names, step_info)
 
+    print_context("8. cross-validation model ...")
     if crossval != 0:
         if crossval == 1:
             cv = LeaveOneOut()
@@ -92,7 +104,7 @@ def multiple_regression_analysis(
             cvname = f'KFold_{crossval_k}'
         else:
             raise ValueError("Invalid crossval value")
-
+        print_context(f"8.1 cross-validation {cvname} ...")
         rmse_list, r2_list = [], []
         for fold_idx, (train_idx, test_idx) in enumerate(cv.split(X)):
             X_train, X_test = X[train_idx], X[test_idx]
@@ -130,6 +142,7 @@ def multiple_regression_analysis(
             "RMSE": rmse_list,
             "R2": r2_list
         })
+        print_context("8. cv scores prediction saving  ...")
         cv_path = output_regression_path_final.replace(".tif", f"_{cvname}_cv_scores.csv")
         cv_df.to_csv(cv_path, index=False)
     
