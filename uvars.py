@@ -9,3 +9,4 @@ predictors_tif_list = [
 
 ### packages
 gtdx_dir = "/home/ljp238/Documents/UoE/GTDX"
+archive_dir = "/media/ljp238/12TBWolf/ARCHIEVE"

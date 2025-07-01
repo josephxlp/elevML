@@ -260,6 +260,10 @@ def resample_raster(src_path, match_path, resampling=Resampling.bilinear):
             return data, profile
 
 def Fdod(fine_path, coarse_path, output_path):
+
+    if os.path.isfile(output_path):
+        print(f"[OK] Output file '{output_path}' already exists. Skipping operation.")
+        return
     coarse_resampled, profile = resample_raster(coarse_path, fine_path)
 
     with rasterio.open(fine_path) as fine_ds:
