@@ -327,6 +327,9 @@ def fmin_get(raster_a_path, raster_b_path, output_path):
         raster_b_path (str): File path to the second input raster.
         output_path (str): File path to save the output raster.
     """
+    if os.path.isfile(output_path):
+        print(f'! The file "{output_path}" already exists.')
+        return output_path
     # Open raster a
     with rasterio.open(raster_a_path) as src_a:
         a = src_a.read(1).astype(float)
