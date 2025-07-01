@@ -106,34 +106,35 @@ def ensemble_prediction(ename:str, pred_paths: list[str], ref_path: str,
             if not os.path.isfile(opte_fn):
                 num_predictions = len(prediction_arrays)
                 print(f'num_predictions @{num_predictions}')
+                print('SKIPPING BAYESIAN OPTIMIZATION')
 
-                def bayesian_optimization_function(w1, w2, w3, w4):
-                    weights = [w1, w2, w3, w4]
-                    ensemble = average_ensemble(prediction_arrays, weights)
-                    return -calculate_rmse(ensemble, reference_array)
+                # def bayesian_optimization_function(w1, w2, w3, w4):
+                #     weights = [w1, w2, w3, w4]
+                #     ensemble = average_ensemble(prediction_arrays, weights)
+                #     return -calculate_rmse(ensemble, reference_array)
 
-                pbounds = {f'w{i+1}': (0, 1) for i in range(num_predictions)}
-                print(f'pbounds @{pbounds}')
+                # pbounds = {f'w{i+1}': (0, 1) for i in range(num_predictions)}
+                # print(f'pbounds @{pbounds}')
 
-                optimizer = BayesianOptimization(
-                    f=bayesian_optimization_function,
-                    pbounds=pbounds,
-                    random_state=1,
-                )
+                # optimizer = BayesianOptimization(
+                #     f=bayesian_optimization_function,
+                #     pbounds=pbounds,
+                #     random_state=1,
+                # )
 
-                optimizer.maximize(
-                    init_points=init_points,
-                    n_iter=n_iter,
-                )
+                # optimizer.maximize(
+                #     init_points=init_points,
+                #     n_iter=n_iter,
+                # )
 
-                best_weights = [optimizer.max['params'][f'w{i+1}'] for i in range(num_predictions)]
-                print(print(f'best_weights @{best_weights}'))
-                optimized_ensemble_array = average_ensemble(prediction_arrays, best_weights)  # Use the corrected function
+                # best_weights = [optimizer.max['params'][f'w{i+1}'] for i in range(num_predictions)]
+                # print(print(f'best_weights @{best_weights}'))
+                # optimized_ensemble_array = average_ensemble(prediction_arrays, best_weights)  # Use the corrected function
                 
-                write_raster(optimized_ensemble_array, transform, crs, opte_fn)
-                print('===' * 40)
-                print(f"Optimized ensemble (maximizing RMSE) saved to: {opte_fn}")
-                print(f"Optimized weights: {best_weights}")
+                # write_raster(optimized_ensemble_array, transform, crs, opte_fn)
+                # print('===' * 40)
+                # print(f"Optimized ensemble (maximizing RMSE) saved to: {opte_fn}")
+                # print(f"Optimized weights: {best_weights}")
             else:
                 print(f"opt ensemble already exists at: {opte_fn}")
         except Exception as e:
