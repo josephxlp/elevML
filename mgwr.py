@@ -13,10 +13,6 @@ def notify_send(fname,tname):
 
 def pipeline_dxcale(xpath, ypath, geoid_fn, wdir,name = 'gwrDTM_'):
     ti = time.perf_counter()
-    start_time = datetime.now()
-    """
-    Pipeline for downscaling GDEM data using GWR and ensemble methods.
-    """
     
     
     expname = os.path.basename(xpath).split(".")[0]
@@ -39,7 +35,7 @@ def pipeline_dxcale(xpath, ypath, geoid_fn, wdir,name = 'gwrDTM_'):
     fmin_run=True
     
     gwrp_fn_list , fmin_fn_list = [],[]
-   
+  
     for dw_weighting in dw_weighting_list:
         ta = tic()
         gwrp_fn, fmin_fn = gwrdownxcale(
@@ -99,6 +95,7 @@ ypaths = [
     ## rbreaking at some point-mustbe that thing "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP_gF3_0_100_inv_dist_dod.tif",
     ## rbreaking at some point "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_dod.tif",
    ##done "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP_dod.tif",
+
 ]
 
 xpaths = [
@@ -117,6 +114,7 @@ for ypath in ypaths:
     
     for xpath in xpaths:
         print('*'*70)
+
         print(f"Processing {xpath}...")
         # running with None because I am assumiing the geoid has been subtracted already
         expname = pipeline_dxcale(xpath, ypath, geoid_fn=None, wdir=wdir,name = name) 
