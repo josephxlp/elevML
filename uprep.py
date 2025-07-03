@@ -31,10 +31,26 @@ def toc():
 
 def print_timing(start_time, end_time, label=""):
     elapsed = end_time - start_time
-    print(f"{label}Start time: {time.ctime(start_time)}")
-    print(f"{label}End time: {time.ctime(end_time)}")
-    print(f"{label}Elapsed time: {elapsed:.2f} sec | {elapsed/60:.2f} min | {elapsed/3600:.2f} hrs | {elapsed/86400:.2f} days")
+    start_str = f"{label}Start time: {time.ctime(start_time)}"
+    end_str = f"{label}End time: {time.ctime(end_time)}"
+    elapsed_str = (f"{label}Elapsed time: {elapsed:.2f} sec | "
+                   f"{elapsed/60:.2f} min | "
+                   f"{elapsed/3600:.2f} hrs | "
+                   f"{elapsed/86400:.2f} days")
+    # return them as a tuple
+    print(start_str)
+    print(end_str)
+    print(elapsed_str)
+    return start_str, end_str, elapsed_str
 
+
+
+# def print_timing(start_time, end_time, label=""):
+#     elapsed = end_time - start_time
+#     print(f"{label}Start time: {time.ctime(start_time)}")
+#     print(f"{label}End time: {time.ctime(end_time)}")
+#     print(f"{label}Elapsed time: {elapsed:.2f} sec | {elapsed/60:.2f} min | {elapsed/3600:.2f} hrs | {elapsed/86400:.2f} days")
+#     return 
 
 def task_merge_tile(vname, tile12dir, mosaic_dir, tilenames_tls):
     pattern = f"{tile12dir}/*/*{vname}.tif"

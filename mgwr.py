@@ -4,13 +4,15 @@ from datetime import datetime
 from glob import glob
 from xSagaDownscale import gwrdownxcale
 from xEnsembles import ensemble_prediction
+from uprep import tic,toc,print_timing
+
+
+def notify_send(fname,tname):
+    os.system(f'notify-send "{fname} finished\n{tname}" --expire-time=60000')
+
 
 def pipeline_dxcale(xpath, ypath, geoid_fn, wdir,name = 'gwrDTM_'):
-    
-    start_time = datetime.now()
-    """
-    Pipeline for downscaling GDEM data using GWR and ensemble methods.
-    """
+    ti = time.perf_counter()
     
     
     expname = os.path.basename(xpath).split(".")[0]
@@ -33,8 +35,9 @@ def pipeline_dxcale(xpath, ypath, geoid_fn, wdir,name = 'gwrDTM_'):
     fmin_run=True
     
     gwrp_fn_list , fmin_fn_list = [],[]
-    ti = time.perf_counter()
+  
     for dw_weighting in dw_weighting_list:
+        ta = tic()
         gwrp_fn, fmin_fn = gwrdownxcale(
             xpath, ypath, opath, geoid_fn, 
             overwrite=overwrite, oaux=oaux, epsg_code=epsg_code, clean=clean,
@@ -43,6 +46,12 @@ def pipeline_dxcale(xpath, ypath, geoid_fn, wdir,name = 'gwrDTM_'):
             model_out=model_out, grid_system=grid_system,fmin_run=fmin_run)
         gwrp_fn_list.append(gwrp_fn)
         fmin_fn_list.append(fmin_fn)
+        tb = toc()
+        fname=f"dw_weighting {dw_weighting}"
+        start_str, end_str, elapsed_str = print_timing(start_time=ta, end_time=tb, label=fname)
+        tname  = f"{start_str}\n{end_str}\n{elapsed_str}"
+        notify_send(fname=expname,tname=tname)
+
 
     assert len(gwrp_fn_list) >= 2, "No file found for Prediction files..."
     assert len(fmin_fn_list) >= 2, "No file found for Prediction files..."
@@ -79,22 +88,24 @@ def pipeline_dxcale(xpath, ypath, geoid_fn, wdir,name = 'gwrDTM_'):
 # cut out OPTe from the code , and also cean up the code [] @write the way as it does not work well 
 
 name = 'gwrDTM_'
-outdir = "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/GWRd_dod"
+#outdir = "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/GWRd_dod"
+outdir = "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/GWRd"
 ypaths = [
-    "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/GEDI03_fdtm_EGM_1Km.tif",
-   # "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP_gF3_0_100_inv_dist_dod.tif",
-   # "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_dod.tif",
-   # "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP_dod.tif",
+   #done "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/GEDI03_fdtm_EGM_1Km.tif",
+    ## rbreaking at some point-mustbe that thing "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP_gF3_0_100_inv_dist_dod.tif",
+    ## rbreaking at some point "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_dod.tif",
+   ##done "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP_dod.tif",
+
 ]
 
 xpaths = [
     "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP_gF3_0_100_inv_dist.tif",
+    "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM.tif",
     "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM_V_3_GAP.tif",
-    "/media/ljp238/12TBWolf/BRCHIEVE/GDEM/BLOCK/TLS/mosaik/TDEM_DEM_EGM.tif"
 ]
 
 for ypath in ypaths:
-    print('#'*45)
+    print('#'*70)
     print(f"Processing {ypath}...")
     bname = os.path.basename(ypath)[:-4]
     print(f"bname: {bname}")
@@ -102,7 +113,8 @@ for ypath in ypaths:
     os.makedirs(wdir, exist_ok=True)
     
     for xpath in xpaths:
-        print('*'*45)
+        print('*'*70)
+
         print(f"Processing {xpath}...")
         # running with None because I am assumiing the geoid has been subtracted already
         expname = pipeline_dxcale(xpath, ypath, geoid_fn=None, wdir=wdir,name = name) 
@@ -112,7 +124,3 @@ for ypath in ypaths:
 
 
 
-# want a txt file that writes fname and the time stable so i can track progress 
-# and also the time it took to run each f
-       
-      
