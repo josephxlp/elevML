@@ -22,6 +22,7 @@ edem_fs  =  glob(f"{archive_dir}/DEMsProducts/EDEMx/TILES/comprexn/*/EDEM/*_EDEM
 gdtm_v_fn = f"{archive_dir}/TargetProducts/GEDI/GRID/comprexn/GEDI_L3_be/GEDI03_elev_lowestmode_mean_2019108_2022019_002_03_EPSG4326.tif"
 geoid_fn = f"{archive_dir}/AUXsProducts/GEOID/GLOBAL/us_nga_egm2008_1.tif"
 
+#[] need to fix DOD by doing alignment with the geoid, and the cut by cutline
 
 if __name__ == '__main__':
     ti = tic()
@@ -43,9 +44,62 @@ if __name__ == '__main__':
     gfill_with_data(fi, fi_fill=EGM08, esa=ESAWC, fo=f2, fo_mask=None, 
                     chunk_size=1024, threshold=-30, nodata_out=-9999)
     
-    run_gdal_fillnodata(src_path=f2, dst_path=f3, md=100, si=0,
+    f3fill = run_gdal_fillnodata(src_path=f2, dst_path=f3, md=100, si=0,
                     method="inv_dist", output_format="GTiff", band=1)
     
+
+    block_geoid1k = f"{mosaic_dir}/EGM08_1Km.tif"
+    block_geoid12 = f"{mosaic_dir}/EGM08_12m.tif"
+    # tdem_wgs_a_fn>TDEM_gap
+
+    if os.path.isfile(block_geoid12):
+        print(f"{block_geoid12} already exists, skipping creation.")
+    else:
+        clip_raster_to_template(geoid_fn, TDEM_gap,block_geoid12)
+
+    if os.path.isfile(block_geoid1k):
+        print(f"{block_geoid1k} already exists, skipping creation.")
+    else:
+        clip_raster_to_template_extent(geoid_fn, TDEM_gap, block_geoid1k)
+    # this are not aliinged , so we need to make sure they are aligned
+
+    block_gdtmv = f"{mosaic_dir}/GEDI03_vdtm_WGS_1Km.tif"
+    block_gdtmf = f"{mosaic_dir}/GEDI03_fdtm_WGS_1Km.tif"
+
+    # this filling only clips the raster to the template extent
+    if os.path.isfile(block_gdtmv):
+        print(f"{block_gdtmv} already exists, skipping creation.")
+    else:
+        clip_raster_to_template_extent(gdtm_v_fn, TDEM_gap, block_gdtmv)
+        # tdem_wgs_a_fn>TDEM_gap
+
+    print('---- Filling files @Gdem ----')
+    if not os.path.isfile(block_gdtmf):
+        print(f"Filling... {block_gdtmf}")
+        riofill(block_gdtmv, block_gdtmf, si=0) # replace by IWD
+
+
+    print('---- Transforming Href files @Gdem ----')
+    block_gdtmf_egm = f"{mosaic_dir}/GEDI03_fdtm_EGM_1Km.tif"
+    if not os.path.isfile(block_gdtmf_egm):
+        print(f"Transforming... {block_gdtmf_egm}")
+        Fdod(fine_path=block_gdtmf, coarse_path=EGM08, output_path=block_gdtmf_egm) 
+        # may be the function inside Ffod is missalinging them 
+        # block_geoid > EGM08 this one is alighed but error due to gdem covering all 
+        # block_geoid > block_geoid1k
+        print(block_gdtmf_egm)
+
+    tdem_r = [i for i in files if 'TDEM_DEM_EGM.tif' in i][0]
+
+    f3filldod = f3fill.replace('.tif', '_dod.tif')
+    raster_calc(f3fill, block_gdtmf_egm, 'sub', f3filldod, priority='rbpath', overwrite=False)
+
+    tdem_rdod = tdem_r.replace('.tif', '_dod.tif')
+    raster_calc(tdem_r, block_gdtmf_egm, 'sub', tdem_rdod, priority='rbpath', overwrite=False)
+ 
+    fidod = fi.replace('.tif', '_dod.tif')
+    raster_calc(fi, block_gdtmf_egm, 'sub', fidod, priority='rbpath', overwrite=False)
+
      
     # print('---- Archieve files @merge ----')
     # edem_egm_a_fn = merge_tile_files(edem_fs,'edem_egm_a',mosaic_dir,tilenames_tls)
